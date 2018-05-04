@@ -9,7 +9,7 @@ object GetToken {
       .appName("GetToken")
       .getOrCreate()
 
-    val ds = spark.read.textFile("/home/spark/data/friends/*._EN.lrc")
+    val ds = spark.read.textFile("hdfs://master:9000/friends/*_EN.lrc")
 
     ds.collect().foreach(println)
 
