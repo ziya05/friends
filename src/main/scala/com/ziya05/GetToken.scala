@@ -51,6 +51,5 @@ object GetToken {
     statBySeaDf.collect().foreach(println)
 
     spark.close()
-
   }
 }
