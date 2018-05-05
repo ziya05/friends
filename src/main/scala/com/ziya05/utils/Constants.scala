@@ -5,4 +5,5 @@ object Constants {
 
   val PTN_EPI = """.*(\d+)x(\d+).*"""
   val PTN_CONTENT = """(\[.*?\])(.*)"""
+  val PTN_CTN_SPLIT_CHARS = """[ ,.!?:]"""
 }
