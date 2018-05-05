@@ -1,3 +1,4 @@
 out/
 target/
 src/main/scala/META-INF/
+.idea/
