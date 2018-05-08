@@ -24,23 +24,24 @@ object GetToken {
           val regCtn(time, content) = fv._2
           (season, episode, time, content.trim)
         })
-        .filter(x => !x._4.isEmpty)
-        .map(x => {
-          (x._1, x._2, x._3,
-            x._4.split(Constants.PTN_CTN_SPLIT_CHARS))
-        })
 
-    val statDf = ds.flatMap(x => {
+
+    val timeList = ds.filter(x => x._4.isEmpty)
+      .map(x => (x._1, x._2, x._3))
+      .collect()
+      .toList
+
+    val mainData = ds.filter(x => !x._4.isEmpty)
+      .map(x => {
+        (x._1, x._2, x._3,
+          x._4.split(Constants.PTN_CTN_SPLIT_CHARS))
+      })
+
+    val statDf = mainData.flatMap(x => {
       for (word <- x._4)
         yield (x._1, x._2, x._3, word)
     }).filter(x => !x._4.isEmpty)
       .toDF("season", "episode", "time", "word")
-
-//    val statByEpiDf = statDf
-//        .groupBy("season", "episode", "word")
-//        .agg(count("word").alias("quantity"))
-//        .select("season", "episode", "word", "quantity")
-//        .sort("season", "episode", "quantity")
 
     val statBySeaDs = statDf
         .groupBy("season", "word")
@@ -48,30 +49,46 @@ object GetToken {
         .select("season", "word", "quantity")
         .orderBy($"season", $"quantity")
         .filter($"quantity" < 5)
-
-    //println(statBySeaDs.schema)
-      .map{
-        case Row(season:String, word:String, quantity:Long) => {
-          (season, word)
+        .map{
+          case Row(season:String, word:String, quantity:Long) => {
+            (season, word)
+          }
         }
-      }
-      .rdd.groupByKey()
-      .map(x => (x._1, x._2.toSeq))
-      .toDS()
+        .rdd.groupByKey()
+        .map(x => (x._1, x._2.toSeq))
+        .toDS()
 
-    val result = ds.joinWith(statBySeaDs,
-      ds("_1") === statBySeaDs("_1"))
+    val result = mainData.joinWith(statBySeaDs,
+      mainData("_1") === statBySeaDs("_1"))
         .map(x => {
           val data = x._1._4.intersect(x._2._2)
-          (x._1._1, x._1._2, x._1._3, data.mkString(" "))
-        })
 
+          var endTime = "----"
+          val et = timeList.filter(y => x._1._1 == y._1 && x._1._2 == y._2 && x._1._3 < y._3)
+            .map(y => y._3)
+            .sorted
+
+          if (et.length > 0)
+            endTime = et.head
+
+          (x._1._1, x._1._2, x._1._3, endTime, data.mkString(" "))
+        }).filter(x => x._1 == "1" && x._2 == "01")
+
+    result.persist()
 
     result
-        .filter(x => x._1 == "1" && x._2 == "01")
+        .map(x => (x._3, x._4, x._5))
+      .sort("_1")
+      .map(x => x._1 +","+ x._2 + "," + x._3)
+      .repartition(1)
+      .rdd
+      .saveAsTextFile(s"${Constants.TAR_FILE}1x01_ENG.lrc")
+
+    result
       .collect()
-      .sortBy(x => x._3)
-      .foreach(println)
+        .foreach(println)
+
+    result.unpersist()
 
     spark.close()
   }
