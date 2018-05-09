@@ -1,6 +1,7 @@
 package com.ziya05.entities
 
-class SubtitleTime(val hour:Int, val minute:Int, val second:Int, val millisecond:Int) {
+class SubtitleTime(val hour:Int, val minute:Int, val second:Int, val millisecond:Int)
+  extends Serializable {
 }
 
 object SubtitleTime {

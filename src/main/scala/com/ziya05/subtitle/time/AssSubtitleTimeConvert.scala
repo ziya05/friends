@@ -1,4 +1,5 @@
-package com.ziya05.Subtitle
+package com.ziya05.subtitle.time
+
 import com.ziya05.entities.SubtitleTime
 
 class AssSubtitleTimeConvert extends SubtitleTimeConvert {
