@@ -1,11 +1,13 @@
 package com.ziya05
 
+import com.ziya05.Subtitle.{AssSubtitleTimeConvert, LrcSubtitleTimeParse, SubtitleTimeConvert, SubtitleTimeParse}
 import com.ziya05.utils.Constants
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.functions.{count, desc, input_file_name}
+import org.apache.spark.sql.functions.{count, input_file_name}
 
 object GetToken {
   def main(args:Array[String]):Unit = {
+    val quantityStd = 10
     val spark = SparkSession
       .builder()
       .appName("GetToken")
@@ -48,7 +50,7 @@ object GetToken {
         .agg(count("word").alias("quantity"))
         .select("season", "word", "quantity")
         .orderBy($"season", $"quantity")
-        .filter($"quantity" < 5)
+        .filter($"quantity" < quantityStd)
         .map{
           case Row(season:String, word:String, quantity:Long) => {
             (season, word)
@@ -73,16 +75,16 @@ object GetToken {
 
           (x._1._1, x._1._2, x._1._3, endTime, data.mkString(" "))
         }).filter(x => x._1 == "1" && x._2 == "01")
+      .map(x => (x._3, x._4, x._5))
+      .sort("_1")
+      .map(x => generateDialogue(x._1, x._2, x._3))
+      .repartition(1)
 
     result.persist()
 
     result
-        .map(x => (x._3, x._4, x._5))
-      .sort("_1")
-      .map(x => x._1 +","+ x._2 + "," + x._3)
-      .repartition(1)
       .rdd
-      .saveAsTextFile(s"${Constants.TAR_FILE}1x01_ENG.lrc")
+      .saveAsTextFile(s"${Constants.TAR_FILE}1x01_ENG")
 
     result
       .collect()
@@ -91,5 +93,15 @@ object GetToken {
     result.unpersist()
 
     spark.close()
+  }
+
+  def generateDialogue(beginTime:String, endTime:String, text:String):String = {
+    val timeParse:SubtitleTimeParse = new LrcSubtitleTimeParse
+    val timeConvert: SubtitleTimeConvert = new AssSubtitleTimeConvert
+
+    val bt = timeConvert.convert(timeParse.parse(beginTime))
+    val et = timeConvert.convert(timeParse.parse(endTime))
+
+    s"Dialogue: 0,$bt,$et,eng,,0,0,0,,$text"
   }
 }
