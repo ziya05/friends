@@ -1,10 +1,11 @@
 package com.ziya05
 
 import com.ziya05.subtitle._
-import com.ziya05.subtitle.time.{AssSubtitleTimeConvert, LrcSubtitleTimeParse, SubtitleTimeConvert, SubtitleTimeParse}
+import com.ziya05.subtitle.converter.AssSubtitleConverter
+import com.ziya05.subtitle.time.LrcSubtitleTimeParser
 import com.ziya05.utils.Constants
-import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.functions.{count, input_file_name}
+import org.apache.spark.sql.{Row, SparkSession}
 
 object GetToken {
   def main(args:Array[String]):Unit = {
@@ -79,29 +80,22 @@ object GetToken {
       .map(x => (x._3, x._4, x._5))
 //      .sort("_1")
 //      .map(x => generateDialogue(x._1, x._2, x._3))
-      .repartition(1)
+      //.repartition(1)
 
 
-    val convert = new AssSubtitleConvert(spark)
+    val convert = new AssSubtitleConverter(spark)
     convert.setDialogue(result)
-    convert.setTimeParse(new LrcSubtitleTimeParse)
+    convert.setTimeParse(new LrcSubtitleTimeParser)
 
-    val ctn = convert.convert()
-    val rdd = spark.sparkContext.parallelize(ctn.split("\n"))
-    rdd.foreach(println)
+    val rdd = convert.convert()
+    rdd.persist()
 
-//
-//    result.persist()
-//
-//    result
-//      .rdd
-//      .saveAsTextFile(s"${Constants.TAR_FILE}1x01_ENG")
-//
-//    result
-//      .collect()
-//        .foreach(println)
-//
-//    result.unpersist()
+    rdd.saveAsTextFile(s"${Constants.TAR_FILE}1x01_ENG")
+
+    rdd.collect()
+        .foreach(println)
+
+    rdd.unpersist()
 
     spark.close()
   }

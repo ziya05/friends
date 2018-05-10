@@ -2,6 +2,6 @@ package com.ziya05.subtitle.time
 
 import com.ziya05.entities.SubtitleTime
 
-abstract class SubtitleTimeParse extends Serializable{
+abstract class SubtitleTimeParser extends Serializable{
   def parse(time:String):SubtitleTime
 }

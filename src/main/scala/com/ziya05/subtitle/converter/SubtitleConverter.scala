@@ -1,23 +1,23 @@
-package com.ziya05.subtitle
+package com.ziya05.subtitle.converter
 
-import com.ziya05.subtitle.time.SubtitleTimeParse
+import com.ziya05.subtitle.time.SubtitleTimeParser
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, SparkSession}
 
-abstract class SubtitleConvert(spark:SparkSession)
+abstract class SubtitleConverter(spark:SparkSession)
   extends Serializable {
   var dialogueList:Dataset[(String, String, String)] = null
-  var timeParse:SubtitleTimeParse = null
+  var timeParse:SubtitleTimeParser = null
 
   def setDialogue(ds:Dataset[(String, String, String)]) = {
     dialogueList = ds
   }
 
-  def setTimeParse(parse:SubtitleTimeParse) = {
+  def setTimeParse(parse:SubtitleTimeParser) = {
     timeParse = parse
   }
 
-  def convert():String = {
+  def convert():RDD[String] = {
     if (dialogueList == null) {
       throw new NullPointerException("dialogueList cannot be null")
     }
@@ -29,5 +29,5 @@ abstract class SubtitleConvert(spark:SparkSession)
     run()
   }
 
-  protected def run():String
+  protected def run():RDD[String]
 }
