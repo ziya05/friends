@@ -1,7 +1,7 @@
 package com.ziya05.subtitle.parser
 
 import com.ziya05.subtitle.time.{LrcSubtitleTimeParser, SubtitleTimeParser}
-import com.ziya05.utils.Constants
+import com.ziya05.utils.{Constants, ProjectUtils}
 import org.apache.spark.sql.functions.input_file_name
 import org.apache.spark.sql.{Dataset, SparkSession}
 
@@ -16,10 +16,10 @@ class LrcSubtitleParser(spark: SparkSession)
       .select(input_file_name, $"value")
       .as[(String, String)]
       .map(fv => {
-        val regEpi = Constants.PTN_EPI.r
+        val regEpi = ProjectUtils.getConfigs.getPtnEpi().r
         val regEpi(season, episode) = fv._1
 
-        val regCtn = Constants.PTN_CONTENT.r
+        val regCtn = ProjectUtils.getConfigs.getPtnContent().r
         val regCtn(time, content) = fv._2
         (season, episode, time, content.trim)
       })
